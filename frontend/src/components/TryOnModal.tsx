@@ -68,7 +68,7 @@ export function TryOnModal({ isOpen, onClose, selectedColor }: TryOnModalProps) 
       const referenceImagePath = `bodytypes/headswapper/${analysisResult.metadata.body_type}/jordan_red_hoodie_reference_${analysisResult.metadata.skin_color}.png`;
       setReferenceImageUrl(`/images/${referenceImagePath}`);
       // Start reveal animation up to maxReveal
-      let start = Date.now();
+      const start = Date.now();
       let animationFrame: number;
       let finished = false;
       let revealDone = false;
@@ -86,7 +86,7 @@ export function TryOnModal({ isOpen, onClose, selectedColor }: TryOnModalProps) 
       const animate = () => {
         if (finished) return;
         const elapsed = Date.now() - start;
-        let progress = Math.min(elapsed / revealDuration, 1) * maxReveal;
+        const progress = Math.min(elapsed / revealDuration, 1) * maxReveal;
         setRevealProgress(progress);
         if (progress < maxReveal && !apiDone) {
           animationFrame = requestAnimationFrame(animate);
