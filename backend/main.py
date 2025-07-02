@@ -168,7 +168,7 @@ CORS(
     origins=[
         "https://gazmanclone.vercel.app",
         "https://66north-jade.vercel.app",  # Add Vercel frontend domain
-        "https://jd-sports.vercel.app/",
+        "https://jd-sports.vercel.app",
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:5174",
@@ -201,14 +201,15 @@ def analyze_user_image_api():
     ):
         return jsonify({"error": "Invalid file type. Please upload an image."}), 400
 
+    # Read file content once
+    file_content = file.read()
+    
     # Validate file size (max 10MB)
-    if len(file.read()) > 10 * 1024 * 1024:
+    if len(file_content) > 10 * 1024 * 1024:
         return jsonify({"error": "File too large. Maximum size is 10MB."}), 400
 
-    file.seek(0)  # Reset file pointer after reading
-
     try:
-        result = analyze_user_image_from_bytes(file.read())
+        result = analyze_user_image_from_bytes(file_content)
         return jsonify(result)
     except Exception as e:
         # Log the actual error for debugging but don't expose it
