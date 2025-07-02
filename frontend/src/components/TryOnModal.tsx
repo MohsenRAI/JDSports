@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ApiService, AnalysisResult, HeadSwapResult } from '@/services/api';
+import { ApiService, AnalysisResult, HeadSwapResult } from '../services/api';
 
 interface TryOnModalProps {
   isOpen: boolean;
@@ -68,7 +68,7 @@ export function TryOnModal({ isOpen, onClose, selectedColor }: TryOnModalProps) 
       const referenceImagePath = `bodytypes/headswapper/${analysisResult.metadata.body_type}/jordan_red_hoodie_reference_${analysisResult.metadata.skin_color}.png`;
       setReferenceImageUrl(`/images/${referenceImagePath}`);
       // Start reveal animation up to maxReveal
-      const start = Date.now();
+      let start = Date.now();
       let animationFrame: number;
       let finished = false;
       let revealDone = false;
@@ -86,7 +86,7 @@ export function TryOnModal({ isOpen, onClose, selectedColor }: TryOnModalProps) 
       const animate = () => {
         if (finished) return;
         const elapsed = Date.now() - start;
-        const progress = Math.min(elapsed / revealDuration, 1) * maxReveal;
+        let progress = Math.min(elapsed / revealDuration, 1) * maxReveal;
         setRevealProgress(progress);
         if (progress < maxReveal && !apiDone) {
           animationFrame = requestAnimationFrame(animate);
@@ -100,7 +100,7 @@ export function TryOnModal({ isOpen, onClose, selectedColor }: TryOnModalProps) 
       };
       animationFrame = requestAnimationFrame(animate);
       // Start API call in parallel
-      ApiService.swapHead(uploadedFile!, referenceImagePath).then((apiResult: HeadSwapResult) => {
+      ApiService.swapHead(uploadedFile!, referenceImagePath).then((apiResult) => {
         result = apiResult;
         setApiResult(apiResult);
         apiDone = true;
@@ -293,7 +293,7 @@ export function TryOnModal({ isOpen, onClose, selectedColor }: TryOnModalProps) 
             </div>
             <div className="flex justify-center mb-6">
               <div>
-                <img src={result.image_url} alt="Result" className="mx-auto max-h-[500px] rounded shadow-lg" style={{ maxWidth: '100%', width: 'auto', height: 'auto' }} />
+                <img src={result.output_image} alt="Result" className="mx-auto max-h-[500px] rounded shadow-lg" style={{ maxWidth: '100%', width: 'auto', height: 'auto' }} />
               </div>
             </div>
             <button

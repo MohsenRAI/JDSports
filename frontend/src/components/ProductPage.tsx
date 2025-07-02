@@ -4,7 +4,7 @@ import { useState } from "react"
 import { ChevronRight, Star, Plus, Minus, Heart, Truck, RotateCcw, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { TryOnModal } from "./TryOnModal"
+import { TryOnModal } from "@/components/TryOnModal"
 
 export default function ProductPage() {
   const [selectedSize, setSelectedSize] = useState("M")
@@ -179,8 +179,8 @@ export default function ProductPage() {
 
               {/* Try on with AI Button */}
               <Button 
-                className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-3 mt-3"
                 onClick={() => setIsTryOnModalOpen(true)}
+                className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-3 mt-3"
               >
                 🤖 Try on with AI
               </Button>
@@ -212,11 +212,11 @@ export default function ProductPage() {
         </div>
       </div>
 
-      {/* Try-On Modal */}
+      {/* Try On Modal */}
       <TryOnModal
         isOpen={isTryOnModalOpen}
         onClose={() => setIsTryOnModalOpen(false)}
-        selectedColor={colors.find(color => color.selected)?.name || "Red"}
+        selectedColor="red"
       />
     </div>
   )
