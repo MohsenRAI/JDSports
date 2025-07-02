@@ -120,13 +120,22 @@ def get_system_prompt():
 
 
 def analyze_user_image_from_bytes(image_bytes):
-    img = Image.open(BytesIO(image_bytes))
-    width, height = img.size
-    if width > 2000 or height > 2000:
-        img.thumbnail((2000, 2000), Image.Resampling.LANCZOS)
-    if img.mode == "RGBA":
-        img = img.convert("RGB")
-    img_base64 = image_to_base64(img)
+    print(f"DEBUG: Starting image analysis, image size: {len(image_bytes)} bytes")
+    try:
+        img = Image.open(BytesIO(image_bytes))
+        print(f"DEBUG: Image opened successfully, size: {img.size}, mode: {img.mode}")
+        width, height = img.size
+        if width > 2000 or height > 2000:
+            img.thumbnail((2000, 2000), Image.Resampling.LANCZOS)
+            print(f"DEBUG: Image resized to: {img.size}")
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
+            print(f"DEBUG: Image converted to RGB")
+        img_base64 = image_to_base64(img)
+        print(f"DEBUG: Image converted to base64, length: {len(img_base64)}")
+    except Exception as e:
+        print(f"DEBUG: Error in image processing: {e}")
+        raise
 
     system_prompt = get_system_prompt()
     user_prompt = "Please analyze this image and describe the gender, body type, and skin color of the central person."
@@ -150,11 +159,19 @@ def analyze_user_image_from_bytes(image_bytes):
         "temperature": 0.0,
     }
 
-    response = client.chat.completions.create(**params)
-    parsed_response = json.loads(response.choices[0].message.content)
-    sc = parsed_response["metadata"]["skin_color"].lower()
-    parsed_response["metadata"]["skin_color"] = NORMALIZE_SKIN.get(sc, sc)
-    return parsed_response
+    print(f"DEBUG: Calling OpenAI API with image base64 length: {len(img_base64)}")
+    try:
+        response = client.chat.completions.create(**params)
+        print(f"DEBUG: OpenAI API call successful")
+        parsed_response = json.loads(response.choices[0].message.content)
+        print(f"DEBUG: Parsed response: {parsed_response}")
+        sc = parsed_response["metadata"]["skin_color"].lower()
+        parsed_response["metadata"]["skin_color"] = NORMALIZE_SKIN.get(sc, sc)
+        print(f"DEBUG: Final response: {parsed_response}")
+        return parsed_response
+    except Exception as e:
+        print(f"DEBUG: Error in OpenAI API call: {e}")
+        raise
 
 
 # --- Flask API for frontend integration ---
@@ -214,6 +231,9 @@ def analyze_user_image_api():
     except Exception as e:
         # Log the actual error for debugging but don't expose it
         print(f"Error in analyze_user_image_api: {e}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        print(f"Full traceback: {traceback.format_exc()}")
         return jsonify({"error": "Internal server error. Please try again."}), 500
 
 
