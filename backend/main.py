@@ -168,7 +168,7 @@ CORS(
     origins=[
         "https://gazmanclone.vercel.app",
         "https://66north-jade.vercel.app",  # Add Vercel frontend domain
-        "https://idsports.vercel.app",
+        "https://jd-sports.vercel.app/",
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:5174",
