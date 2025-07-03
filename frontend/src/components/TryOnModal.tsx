@@ -67,6 +67,7 @@ export function TryOnModal({ isOpen, onClose, selectedColor }: TryOnModalProps) 
       // Step 2: Headswap
       const referenceImagePath = `bodytypes/headswapper/${analysisResult.metadata.body_type}/jordan_red_hoodie_reference_${analysisResult.metadata.skin_color}.png`;
       setReferenceImageUrl(`/images/${referenceImagePath}`);
+      console.debug('[TryOnModal] Animation started with reference image:', `/images/${referenceImagePath}`);
       // Start reveal animation up to maxReveal
       let start = Date.now();
       let animationFrame: number;
@@ -81,6 +82,9 @@ export function TryOnModal({ isOpen, onClose, selectedColor }: TryOnModalProps) 
           setShowResult(true);
           setIsLoading(false);
           setIsDiffusing(false);
+          if (result && result.output_image) {
+            console.debug('[TryOnModal] Backend result image shown:', result.output_image);
+          }
         }, 200);
       };
       const animate = () => {
