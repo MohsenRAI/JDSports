@@ -9,6 +9,17 @@ from flask_cors import CORS
 import requests
 from flask import send_from_directory
 import traceback
+import logging
+
+# Set up logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s %(message)s',
+)
+
+# Set Flask log level to DEBUG
+import flask
+flask.logging.create_logger = lambda app: logging.getLogger('flask.app')
 
 # Load environment variables
 load_dotenv()
@@ -120,21 +131,21 @@ def get_system_prompt():
 
 
 def analyze_user_image_from_bytes(image_bytes):
-    print(f"DEBUG: Starting image analysis, image size: {len(image_bytes)} bytes")
+    logging.debug(f"DEBUG: Starting image analysis, image size: {len(image_bytes)} bytes")
     try:
         img = Image.open(BytesIO(image_bytes))
-        print(f"DEBUG: Image opened successfully, size: {img.size}, mode: {img.mode}")
+        logging.debug(f"DEBUG: Image opened successfully, size: {img.size}, mode: {img.mode}")
         width, height = img.size
         if width > 2000 or height > 2000:
             img.thumbnail((2000, 2000), Image.Resampling.LANCZOS)
-            print(f"DEBUG: Image resized to: {img.size}")
+            logging.debug(f"DEBUG: Image resized to: {img.size}")
         if img.mode == "RGBA":
             img = img.convert("RGB")
-            print(f"DEBUG: Image converted to RGB")
+            logging.debug(f"DEBUG: Image converted to RGB")
         img_base64 = image_to_base64(img)
-        print(f"DEBUG: Image converted to base64, length: {len(img_base64)}")
+        logging.debug(f"DEBUG: Image converted to base64, length: {len(img_base64)}")
     except Exception as e:
-        print(f"DEBUG: Error in image processing: {e}")
+        logging.debug(f"DEBUG: Error in image processing: {e}")
         raise
 
     system_prompt = get_system_prompt()
@@ -159,18 +170,18 @@ def analyze_user_image_from_bytes(image_bytes):
         "temperature": 0.0,
     }
 
-    print(f"DEBUG: Calling OpenAI API with image base64 length: {len(img_base64)}")
+    logging.debug(f"DEBUG: Calling OpenAI API with image base64 length: {len(img_base64)}")
     try:
         response = client.chat.completions.create(**params)
-        print(f"DEBUG: OpenAI API call successful")
+        logging.debug(f"DEBUG: OpenAI API call successful")
         parsed_response = json.loads(response.choices[0].message.content)
-        print(f"DEBUG: Parsed response: {parsed_response}")
+        logging.debug(f"DEBUG: Parsed response: {parsed_response}")
         sc = parsed_response["metadata"]["skin_color"].lower()
         parsed_response["metadata"]["skin_color"] = NORMALIZE_SKIN.get(sc, sc)
-        print(f"DEBUG: Final response: {parsed_response}")
+        logging.debug(f"DEBUG: Final response: {parsed_response}")
         return parsed_response
     except Exception as e:
-        print(f"DEBUG: Error in OpenAI API call: {e}")
+        logging.debug(f"DEBUG: Error in OpenAI API call: {e}")
         raise
 
 
@@ -207,21 +218,21 @@ def health_check():
 
 @app.route("/api/analyze-user-image", methods=["POST"])
 def analyze_user_image_api():
-    print("DEBUG: /api/analyze-user-image endpoint called")
-    print(f"DEBUG: Request method: {request.method}")
-    print(f"DEBUG: Request files: {list(request.files.keys())}")
-    print(f"DEBUG: Request form: {list(request.form.keys())}")
+    logging.debug("DEBUG: /api/analyze-user-image endpoint called")
+    logging.debug(f"DEBUG: Request method: {request.method}")
+    logging.debug(f"DEBUG: Request files: {list(request.files.keys())}")
+    logging.debug(f"DEBUG: Request form: {list(request.form.keys())}")
     
     if "image" not in request.files:
-        print("DEBUG: No image file in request.files")
+        logging.debug("DEBUG: No image file in request.files")
         return jsonify({"error": "No image file provided"}), 400
 
     file = request.files["image"]
-    print(f"DEBUG: Got file: {file.filename}, content type: {file.content_type}")
+    logging.debug(f"DEBUG: Got file: {file.filename}, content type: {file.content_type}")
 
     # Validate file type
     if not file.filename or not file.filename.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp")):
-        print(f"DEBUG: Invalid file type: {file.filename}")
+        logging.debug(f"DEBUG: Invalid file type: {file.filename}")
         return jsonify({"error": "Invalid file type. Please upload an image."}), 400
 
     # Read file content once
@@ -236,17 +247,17 @@ def analyze_user_image_api():
         return jsonify(result)
     except Exception as e:
         # Log the actual error for debugging but don't expose it
-        print(f"Error in analyze_user_image_api: {e}")
-        print(f"Error type: {type(e).__name__}")
+        logging.error(f"Error in analyze_user_image_api: {e}")
+        logging.error(f"Error type: {type(e).__name__}")
         import traceback
-        print(f"Full traceback: {traceback.format_exc()}")
+        logging.error(f"Full traceback: {traceback.format_exc()}")
         return jsonify({"error": "Internal server error. Please try again."}), 500
 
 
 # Point to the frontend directory where public folder is located
 BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
-print("DEBUG: BASE_DIR =", BASE_DIR)
-print("DEBUG: Expected images path =", os.path.join(BASE_DIR, "public", "images"))
+logging.debug(f"DEBUG: BASE_DIR = {BASE_DIR}")
+logging.debug(f"DEBUG: Expected images path = {os.path.join(BASE_DIR, 'public', 'images')}")
 
 
 def get_reference_image_path(body_type, skin_color, color_prefix=None):
@@ -289,7 +300,7 @@ def swap_head_api():
 
         # 2. Get the reference image path (allow override from frontend)
         reference_image_rel = request.form.get("reference_image")
-        print("DEBUG: Received reference_image parameter:", reference_image_rel)
+        logging.debug("DEBUG: Received reference_image parameter:", reference_image_rel)
         if reference_image_rel:
             # Sanitize the path to prevent directory traversal
             reference_image_rel = (
@@ -297,32 +308,32 @@ def swap_head_api():
             )
             # Always resolve relative to public/images
             ref_path = os.path.join(BASE_DIR, "public", "images", reference_image_rel)
-            print("DEBUG: Resolved reference image path:", ref_path)
+            logging.debug("DEBUG: Resolved reference image path:", ref_path)
         else:
             relative_ref_path = get_reference_image_path(body_type, skin_color)
             ref_path = os.path.join(BASE_DIR, "public", "images", relative_ref_path)
-            print("DEBUG: Using default reference image path:", ref_path)
+            logging.debug("DEBUG: Using default reference image path:", ref_path)
 
         # Validate that the reference image path is within allowed directory
         allowed_base = os.path.join(BASE_DIR, "public", "images")
         if not os.path.commonpath([ref_path, allowed_base]) == allowed_base:
             return jsonify({"error": "Invalid reference image path"}), 400
 
-        print("DEBUG: Looking for reference image at:", os.path.abspath(ref_path))
-        print("DEBUG: Reference image exists:", os.path.exists(ref_path))
+        logging.debug("DEBUG: Looking for reference image at:", os.path.abspath(ref_path))
+        logging.debug("DEBUG: Reference image exists:", os.path.exists(ref_path))
         if os.path.exists(ref_path):
-            print("DEBUG: Reference image size:", os.path.getsize(ref_path), "bytes")
+            logging.debug("DEBUG: Reference image size:", os.path.getsize(ref_path), "bytes")
         else:
-            print("DEBUG: Reference image not found!")
+            logging.debug("DEBUG: Reference image not found!")
             # List contents of the directory to help debug
             try:
                 dir_path = os.path.dirname(ref_path)
                 if os.path.exists(dir_path):
-                    print("DEBUG: Directory contents:", os.listdir(dir_path))
+                    logging.debug("DEBUG: Directory contents:", os.listdir(dir_path))
                 else:
-                    print("DEBUG: Directory does not exist:", dir_path)
+                    logging.debug("DEBUG: Directory does not exist:", dir_path)
             except Exception as e:
-                print("DEBUG: Error listing directory:", e)
+                logging.debug("DEBUG: Error listing directory:", e)
         
         if not os.path.exists(ref_path):
             return jsonify({"error": "Reference image not found"}), 404
@@ -333,7 +344,7 @@ def swap_head_api():
             ref_path, os.path.join(BASE_DIR, "public", "images")
         )
         pregenerated_image_url = f"/images/{relative_ref_path}"
-        print("DEBUG: Constructed pregenerated_image_url:", pregenerated_image_url)
+        logging.debug("DEBUG: Constructed pregenerated_image_url:", pregenerated_image_url)
 
         # 3. Read both images as base64 data URIs
         reference_image_data_uri = image_file_to_data_uri(ref_path)
@@ -345,11 +356,11 @@ def swap_head_api():
         # Test connectivity to HeadSwapper API
         try:
             test = requests.get("http://34.122.243.90:8090/headswap", timeout=5)
-            print("Test GET /headswap status:", test.status_code)
-            print("Test GET /headswap response:", test.text)
+            logging.debug("Test GET /headswap status:", test.status_code)
+            logging.debug("Test GET /headswap response:", test.text)
         except Exception as e:
-            print("Test GET /headswap failed:", e)
-            print("WARNING: HeadSwapper service is not available. Using fallback mode.")
+            logging.warning("Test GET /headswap failed:", e)
+            logging.warning("WARNING: HeadSwapper service is not available. Using fallback mode.")
             # Return a fallback response for testing purposes
             return jsonify({
                 "output_image": reference_image_data_uri,  # Return the reference image as fallback
@@ -373,34 +384,34 @@ def swap_head_api():
             "owner_id": "gazman_tryon"
         }
         
-        print("DEBUG: Sending request to HeadSwapper API...")
-        print("DEBUG: Reference image path:", ref_path)
-        print("DEBUG: Reference image exists:", os.path.exists(ref_path))
-        print("DEBUG: Reference image size:", os.path.getsize(ref_path) if os.path.exists(ref_path) else "N/A")
-        print("DEBUG: API URL:", url)
-        print("DEBUG: Payload keys:", list(payload.keys()))
+        logging.debug("DEBUG: Sending request to HeadSwapper API...")
+        logging.debug("DEBUG: Reference image path:", ref_path)
+        logging.debug("DEBUG: Reference image exists:", os.path.exists(ref_path))
+        logging.debug("DEBUG: Reference image size:", os.path.getsize(ref_path) if os.path.exists(ref_path) else "N/A")
+        logging.debug("DEBUG: API URL:", url)
+        logging.debug("DEBUG: Payload keys:", list(payload.keys()))
         
         try:
             hs_response = requests.post(url, json=payload, timeout=120)
-            print("DEBUG: HeadSwapper request sent successfully")
-            print("HeadSwapper response status:", hs_response.status_code)
-            print("HeadSwapper response:", hs_response.text[:500])  # Print first 500 chars of response
+            logging.debug("DEBUG: HeadSwapper request sent successfully")
+            logging.debug("HeadSwapper response status:", hs_response.status_code)
+            logging.debug("HeadSwapper response:", hs_response.text[:500])  # Print first 500 chars of response
             hs_response.raise_for_status()
             
             # Parse the new response structure
             response_data = hs_response.json()
             if response_data.get("status") == "success" and "data" in response_data:
                 output_image = response_data["data"]["output_image"]
-                print("DEBUG: Successfully extracted output image from response")
+                logging.debug("DEBUG: Successfully extracted output image from response")
             else:
-                print("DEBUG: Unexpected response structure:", response_data)
+                logging.debug("DEBUG: Unexpected response structure:", response_data)
                 return jsonify({"error": "Invalid response from HeadSwapper service"}), 500
                 
         except requests.exceptions.RequestException as e:
-            print("HeadSwapper API error:", str(e))
+            logging.error("HeadSwapper API error:", str(e))
             return jsonify({"error": "Failed to connect to HeadSwapper service"}), 503
         except Exception as e:
-            print("Error processing HeadSwapper response:", str(e))
+            logging.error("Error processing HeadSwapper response:", str(e))
             return jsonify({"error": "Failed to process HeadSwapper response"}), 500
 
         return jsonify(
@@ -411,7 +422,7 @@ def swap_head_api():
             }
         )
     except Exception as e:
-        print("Error in swap-head:", e)
+        logging.error("Error in swap-head:", e)
         traceback.print_exc()
         return jsonify({"error": "Internal server error. Please try again."}), 500
 
@@ -423,7 +434,7 @@ def serve_images(filename):
         images_dir = os.path.join(BASE_DIR, "public", "images")
         return send_from_directory(images_dir, filename)
     except Exception as e:
-        print(f"Error serving image {filename}: {e}")
+        logging.error(f"Error serving image {filename}: {e}")
         return jsonify({"error": "Image not found"}), 404
 
 
