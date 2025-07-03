@@ -13,7 +13,7 @@ Configuration settings for the Image Generation system.
 
 # OpenAI API Key
 # Load from environment variable for security
-DEFAULT_API_KEY = os.getenv("OPENAI_API_KEY", None)
+DEFAULT_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 
 if not DEFAULT_API_KEY:
     raise ValueError(

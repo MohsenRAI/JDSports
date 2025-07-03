@@ -96,7 +96,12 @@ SKIN_TONE_DESCRIPTIONS = "\n".join(
     [f"- {st['name']}: {st['description']}" for st in SKIN_TONES]
 )
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Get and clean the API key
+api_key = os.getenv("OPENAI_API_KEY", "").strip()
+logging.debug(f"DEBUG: API key length: {len(api_key)}")
+logging.debug(f"DEBUG: API key starts with: {api_key[:10]}...")
+logging.debug(f"DEBUG: API key ends with: ...{api_key[-10:]}")
+client = OpenAI(api_key=api_key)
 
 
 def image_to_base64(image):
