@@ -207,15 +207,21 @@ def health_check():
 
 @app.route("/api/analyze-user-image", methods=["POST"])
 def analyze_user_image_api():
+    print("DEBUG: /api/analyze-user-image endpoint called")
+    print(f"DEBUG: Request method: {request.method}")
+    print(f"DEBUG: Request files: {list(request.files.keys())}")
+    print(f"DEBUG: Request form: {list(request.form.keys())}")
+    
     if "image" not in request.files:
+        print("DEBUG: No image file in request.files")
         return jsonify({"error": "No image file provided"}), 400
 
     file = request.files["image"]
+    print(f"DEBUG: Got file: {file.filename}, content type: {file.content_type}")
 
     # Validate file type
-    if not file.filename or not file.filename.lower().endswith(
-        (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp")
-    ):
+    if not file.filename or not file.filename.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp")):
+        print(f"DEBUG: Invalid file type: {file.filename}")
         return jsonify({"error": "Invalid file type. Please upload an image."}), 400
 
     # Read file content once
